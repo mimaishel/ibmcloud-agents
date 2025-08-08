@@ -7,7 +7,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'IBM Cloud MCP Agents',
   tagline: 'Client-side agents leveraging IBM Cloud tools.',
-  favicon: 'img/favicon.ico',
+  // favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -28,6 +28,12 @@ const config: Config = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
 
+  // Add plugins
+  plugins: [],
+
+  // Add scripts to be loaded in the client
+  scripts: [],
+
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
   // may want to replace "en" with "zh-Hans".
@@ -44,8 +50,8 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+          // editUrl:
+          //   'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
           routeBasePath: '/', // Serve docs at the site's root
           remarkPlugins: [],
           rehypePlugins: [],
@@ -75,7 +81,9 @@ const config: Config = {
   themeConfig: {
     // Replace with your project's social card
     colorMode: {
-      respectPrefersColorScheme: true
+      defaultMode: 'light',
+      disableSwitch: true,
+      // respectPrefersColorScheme: true
     },
     image: 'img/docusaurus-social-card.jpg',
     navbar: {
@@ -96,28 +104,24 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Documentation',
           items: [
             {
-              label: 'Tutorial',
-              to: '/docs/intro',
+              label: 'Get Started',
+              to: '/',
             },
           ],
         },
         {
-          title: 'Community',
+          title: 'Resources',
           items: [
             {
-              label: 'Stack Overflow',
+              label: 'IBM Blog',
               href: 'https://stackoverflow.com/questions/tagged/docusaurus',
             },
             {
-              label: 'Discord',
+              label: 'Model Context Protocol',
               href: 'https://discordapp.com/invite/docusaurus',
-            },
-            {
-              label: 'X',
-              href: 'https://x.com/docusaurus',
             },
           ],
         },
@@ -125,17 +129,13 @@ const config: Config = {
           title: 'More',
           items: [
             {
-              label: 'Blog',
-              to: '/blog',
-            },
-            {
               label: 'GitHub',
               href: 'https://github.com/facebook/docusaurus',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} IBM Corporation.`,
     },
     prism: {
       theme: prismThemes.github,
