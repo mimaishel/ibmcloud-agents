@@ -1,6 +1,6 @@
 ---
 slug: /
-title: Welcome to AWS MCP Servers
+title: Get Started
 ---
 
 import IntroReadme from '../../../README.md';
