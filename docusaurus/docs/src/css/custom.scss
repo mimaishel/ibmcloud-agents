@@ -3,8 +3,42 @@
  * bundles Infima by default. Infima is a CSS framework designed to
  * work well for content-centric websites.
  */
+// @use "@carbon/react/scss/config" with (
+//   $use-akamai-cdn: true // pull fonts from akamai
+// );
+// @use "@carbon/react/scss/reset";
+// @use "@carbon/react/scss/fonts";
+// @use "@carbon/react/scss/layer";
+// @use "@carbon/react/scss/type" as *;
+// @use "@carbon/react/scss/colors" as *;
+// @use "@carbon/styles/scss/themes" as *;
+// @use "@carbon/react/scss/theme" as *;
+// @use "@carbon/react/scss/breakpoint" as *;
+// @use "@carbon/react/scss/spacing" as *;
 
-/* You can override the default Infima variables here. */
+// carbon components
+// @use "@carbon/react";
+
+// @font-face {
+//   font-family: ;
+//   src: url();
+// }
+
+@font-face {
+  font-family: 'IBMFlexSans-Regular';
+  src: url('../../static/fonts/ibm-flex-sans/woff2/IBMPlexSans-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'IBMFlexSans-Bold';
+  src: url('../../static/fonts/ibm-flex-sans/woff2/IBMPlexSans-Bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'IBMFlexMono-Regular';
+  src: url('../../static/fonts/ibm-flex-mono/woff2/IBMPlexMono-Regular.woff2') format('woff2');
+}
+
 :root {
   --ibm-blue-30: #a6c8ff;
   --ibm-blue-40: #78a9ff;
@@ -12,6 +46,10 @@
   --ibm-blue-60: #0f62fe;
   --ibm-blue-70: #0043ce;
   --ibm-blue-80: #002d9c;
+
+  --ifm-font-family-base: 'IBMFlexSans-Regular';
+  --ifm-heading-font-family: 'IBMFlexSans-Bold';
+  --ifm-font-family-monospace: 'IBMFlexMono-Regular';
 
   --ifm-color-primary: var(--ibm-blue-60);
   --ifm-color-primary-dark: var(--ibm-blue-60);

@@ -29,7 +29,7 @@ const config: Config = {
   onBrokenMarkdownLinks: 'throw',
 
   // Add plugins
-  plugins: [],
+  plugins: ['docusaurus-plugin-sass'],
 
   // Add scripts to be loaded in the client
   scripts: [],
@@ -72,7 +72,7 @@ const config: Config = {
         //   onUntruncatedBlogPosts: 'warn',
         // },
         theme: {
-          customCss: ['./src/css/custom.css', './src/css/overrides.css'],
+          customCss: ['./src/css/custom.scss', './src/css/overrides.scss'],
         },
       } satisfies Preset.Options,
     ],
