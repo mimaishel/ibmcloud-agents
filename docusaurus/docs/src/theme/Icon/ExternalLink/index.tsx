@@ -11,5 +11,5 @@ export default function IconExternalLink({
   width = 13.5,
   height = 13.5,
 }: Props): ReactNode {
-  return <Launch style={{ marginLeft: '0.3rem', marginBottom: '0.1rem' }} width={width} height={height} />
+  return <Launch style={{ marginLeft: '0.3rem', marginBottom: '0.2rem' }} width={width} height={height} />
 }
