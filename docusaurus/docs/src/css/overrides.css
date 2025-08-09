@@ -1,0 +1,24 @@
+
+/* sidebar container for list nav links. */
+.menu__list {
+  padding-right: 0.5rem;
+}
+
+/* Breadcrumb link text alignment with carbon (overridden) icons. */
+a svg {
+  vertical-align: text-bottom;
+}
+/* .breadcrumbs__link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumbs__item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumbs {
+  display: inline-flex;
+  align-items: center;
+} */

@@ -94,7 +94,7 @@ const config: Config = {
       },
       items: [
         {
-          href: 'https://github.com/facebook/docusaurus',
+          href: 'https://github.com/ccmitchellusa/ibmcloud-agents',
           label: 'GitHub',
           position: 'right',
         },
@@ -102,6 +102,13 @@ const config: Config = {
     },
     footer: {
       style: 'dark',
+      logo: {
+        alt: 'IBM Cloud Logo',
+        src: 'img/ibm-cloud-logo.png',
+        href: 'https://www.ibm.com/cloud',
+        width: 30,
+        height: 30,
+      },
       links: [
         {
           title: 'Documentation',
