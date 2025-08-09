@@ -4,7 +4,7 @@
 
 ## Features
 
-- **🛠️ MCP-compliant IBM Cloud tools**: Each agent can easily be configured with its own list of IBM Cloud tools that it will use. The integrated [chuk-mcp](https://github.com/chrishayuk/chuk-mcp) library provides multi-server, production quality MCP implementation that is blazing FAST.  
+- **🛠️ MCP-compliant IBM Cloud tools**: Each agent can easily be configured with its own list of IBM Cloud tools that it will use. The integrated [chuk-mcp](https://github.com/chrishayuk/chuk-mcp) library provides multi-server, production quality MCP implementation that is blazing FAST.
 - **Add MCP servers as needed** For agents that require additional tools (MCP servers), you can include them in the Containerfile as a build layer and within the agent configure them alongside the IBM Cloud MCP Server.
 - **🪶Lightweight 🕵️ A2A-compliant**: A2A Protocol support is provided via [a2a-server](https://github.com/chrishayuk/a2a-server). Each agent is exposed on A2A endpoints with agent cards that can be easily configured (YAML).
 - **📦 Runs on _any_ Container runtime**: Agent containers can be deployed on any container runtime, including Podman, Rancher, Docker™️,  Kubernetes, IBM Cloud Code Engine (serverless), or RedHat™️ OpenShift.
@@ -63,14 +63,14 @@ Open browser on `http://localhost:8000/agent-card.json` to view card JSON. This 
 
 ## Install an A2A Client
 
-To connect to the agents over A2A protocol, you will need an A2A client.  The simplest A2A client which runs from the command line is  Chris Hay's [A2A CLI](https://github.com/chrishayuk/a2a-cli).  
+To connect to the agents over A2A protocol, you will need an A2A client.  The simplest A2A client which runs from the command line is  Chris Hay's [A2A CLI](https://github.com/chrishayuk/a2a-cli).
 In a separate shell, issue the following command to install and run the a2a-cli and connect it to the running agents.
 
 ```bash
 uvx a2a-cli --server http://localhost:8000 chat
 ```
 
-# Try Each Agent
+## Try Each Agent
 
 There are multiple agents running in the default agent server configuration:
 
@@ -82,7 +82,7 @@ There are multiple agents running in the default agent server configuration:
 
 You can use the `/connect` command in `a2a-cli` to switch between the agents, view their cards, and send prompts to the agents.
 
-To switch to the **Base agent** while running a2a-cli, type:
+<!-- To switch to the **Base agent** while running a2a-cli, type:
 
 ```bash
 /connect http://localhost:8000/ibmcloud_base_agent
@@ -110,7 +110,7 @@ The guide agent is connected via MCP to an assistant that has been trained on al
 
 Try to ask a question, like:
 
-```text 
+```text
 Assist me with IBMCLOUD_TOPIC
 ```
 Some example topics:
@@ -143,7 +143,7 @@ Next switch to the **Account Admin agent**:
 
 ![Account Admin's Agent Card](docs/images/account_admin_agent_card.png)
 
-and ask 
+and ask
 
 ```text
 What can you help me with?
@@ -153,7 +153,7 @@ You will see various management tasks for working with IBM Cloud accounts, users
 
 ![Account management capabilities](docs/images/account_admin_capabilities.png)
 
-To switch back to the Base agent, type 
+To switch back to the Base agent, type
 
 ```bash
 /connect http://localhost:8000/ibmcloud_base_agent
@@ -165,7 +165,7 @@ An example specialized agent for Serverless computing using Code Engine is found
 
 - 🧠LLM connection - LiteLLM
 - 🛠️IBMCloud MCP Server tool configuration for Code Engine-related tasks
-- 🕵️Agent 📃instructions for Serverless computing on IBM Cloud.
+- 🕵️Agent 📃instructions for Serverless computing on IBM Cloud. -->
 
 ## 📦Containerization
 
@@ -217,7 +217,7 @@ Replace RESOURCE_GROUP with the name of the resource group where you want the co
 
 ```bash
 # Log docker into the IBM Cloud container registry at icr.io
-ibmcloud cr login 
+ibmcloud cr login
 ibmcloud cr namespace-add -g RESOURCE_GROUP agentic
 # Build the image and push it to the container registry in the 'agentic' namespace and 'a2a' repository.
 docker build -f Dockerfile --push -t icr.io/agentic/a2a .

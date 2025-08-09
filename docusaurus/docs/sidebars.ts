@@ -20,6 +20,18 @@ const sidebars: SidebarsConfig = {
       id: 'get-started',
       type: 'doc',
       label: 'Get Started',
+    },
+    {
+      type: 'category',
+      label: 'Try Each Agent',
+      collapsed: false,
+      items: [
+        'agents/base-agent',
+        'agents/ibm-cloud-guide',
+        'agents/ibm-cloud-serverless-computing',
+        'agents/ibm-cloud-account-admin',
+        'agents/ibm-cloud-automation',
+      ]
     }
   ],
 

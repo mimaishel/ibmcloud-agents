@@ -3,6 +3,6 @@ slug: /
 title: Get Started
 ---
 
-import IntroReadme from '../../../README.md';
+import IntroREADME from '../../../README.md';
 
-<IntroReadme />
+<IntroREADME />
