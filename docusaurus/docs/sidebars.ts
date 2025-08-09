@@ -27,10 +27,10 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         'agents/base-agent',
-        'agents/ibm-cloud-guide',
-        'agents/ibm-cloud-serverless-computing',
-        'agents/ibm-cloud-account-admin',
-        'agents/ibm-cloud-automation',
+        'agents/ibm-cloud-guide-agent',
+        'agents/ibm-cloud-serverless-computing-agent',
+        'agents/ibm-cloud-account-admin-agent',
+        'agents/ibm-cloud-automation-agent',
       ]
     }
   ],
