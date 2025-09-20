@@ -22,4 +22,5 @@ export default defineConfig({
       ]
     }), reactRouter(), tsconfigPaths()
   ],
+  base: '' // update this to the repo github repo name.
 });
