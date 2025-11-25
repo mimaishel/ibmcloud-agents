@@ -9,6 +9,7 @@
 - **🪶Lightweight 🕵️ A2A-compliant**: A2A Protocol support is provided via [a2a-server](https://github.com/chrishayuk/a2a-server). Each agent is exposed on A2A endpoints with agent cards that can be easily configured (YAML).
 - **📦 Runs on _any_ Container runtime**: Agent containers can be deployed on any container runtime, including Podman, Rancher, Docker™️,  Kubernetes, IBM Cloud Code Engine (serverless), or RedHat™️ OpenShift.
 - **🧠 BYOM** - Bring your own model (Caveat: Models MUST support OpenAI-compliant 🛠️tool calling features). The integrated [chuk-llm](https://github.com/chrishayuk/chuk-llm) library makes working with multiple model providers and models extremely SIMPLE--and FAST!
+- **☁️ Production Services Integration** - Optional integration with IBM Cloud Monitoring (OTEL metrics), IBM Cloud Logs (centralized logging), and Object Storage (session management) for production deployments. Use the [terraform-ibm-agentic-services](https://github.com/ccmitchellusa/terraform-ibm-agentic-services) deployable architecture for infrastructure-as-code deployment.
 - **🕵️ Base Agent** - A base agent example is provided that can be easily customized with different models, tools and instructions to create new IBM Cloud platform engineering agents.
 
 ## ❤️ Keeping it simple
@@ -19,17 +20,43 @@ The common core of the agents is found in [`src/ibmcloud_base_agent/agent.py`](s
 - 🛠️IBMCloud MCP Server tool configuration for basic IBM Cloud commands to set target context and listing resource groups.
 - 🕵️Agent 📃instructions - System prompt that defines the agents core behavior
 
-This agent is the default agent that will appear when connecting to the server with a2a-cli (or other a2a client app).
+The **Supervisor Agent** is now the default agent that will appear when connecting to the server with a2a-cli (or other a2a client app), providing intelligent task delegation to specialized agents.
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+- **[📖 Getting Started](docs/README.md)** - Complete overview and quick start guide
+- **[🤖 Agent Overview](docs/agents/README.md)** - Understanding all available agents  
+- **[🎩 Kingsmen Curl Tutorial](docs/tutorials/KINGSMEN_CURL_TUTORIAL.md)** - Complete guide to using curl commands
+- **[🛠️ Interactive Examples](docs/examples/kingsmen_curl_examples.sh)** - Hands-on demo script
+
+### Quick Tutorial Access
+
+The fastest way to get started:
+
+```bash
+# Start the server with all agents
+export OPENAI_API_KEY="your-key"
+export IBMCLOUD_API_KEY="your-ibm-key"
+./run.sh
+
+# Connect with the default Supervisor Agent
+uvx a2a-cli --server http://localhost:8000 chat
+
+# Or try the Kingsmen team with curl commands:
+./docs/examples/kingsmen_curl_examples.sh
+```
 
 ## 🗜️Installation & Setup
 
 1. Install [`uv`](https://docs.astral.sh/uv/)
-2. Install [IBM Cloud MCP Server](https://github.com/IBM-Cloud/mcp) 👷🏻‍♂️🚧 (coming soon!)
+2. Install [IBM Cloud MCP Server](https://github.com/IBM-Cloud/mcp)
 3. Clone the repository:
 
 ```bash
-git clone https://github.com/ccmitchellusa/ibmcloud-base-agent.git
-cd ibmcloud-base-agent
+git clone https://github.com/ccmitchellusa/ibmcloud-agents.git
+cd ibmcloud-agents
 ```
 
 3. Install dependencies:
@@ -70,102 +97,140 @@ In a separate shell, issue the following command to install and run the a2a-cli 
 uvx a2a-cli --server http://localhost:8000 chat
 ```
 
-# Try Each Agent
+# Understanding the Agent Architecture
 
-There are multiple agents running in the default agent server configuration:
+## 🎯 Intelligent Agent Coordination
 
-- Base Agent
-- IBM Cloud Guide
-- IBM Cloud Serverless Computing
-- IBM Cloud Account Admin
-- IBM Cloud Cloud Automation
+The system now features **two levels of coordination**:
 
-You can use the `/connect` command in `a2a-cli` to switch between the agents, view their cards, and send prompts to the agents.
+### 1. **Supervisor Agent** (Default) 🤖
+The **Supervisor Agent** serves as the default entry point and provides intelligent task delegation using LLM-powered routing. It analyzes your requests and automatically delegates to the most appropriate specialized agent.
 
-To switch to the **Base agent** while running a2a-cli, type:
+**Available via**: `http://localhost:8000` (default) or `http://localhost:8000/supervisor_agent`
 
+### 2. **The Kingsmen** 🎩 (Elite Team)
+An alternative coordination approach featuring a themed team of IBM Cloud specialists, each with codenames and specialized expertise:
+
+| Codename | Agent | Expertise |
+|----------|-------|-----------|
+| **Galahad** | Base Agent | Foundation & Infrastructure |
+| **Lancelot** | Account Admin | Security & Access Control |
+| **Percival** | Serverless Agent | Modern Applications & Serverless |
+| **Gareth** | Guide Agent | Strategy & Best Practices |
+| **Tristan** | Cloud Automation | DevOps & Automation |
+
+**Available via**: `http://localhost:8000/kingsmen_agent`
+
+## 🛠️ Specialized Agents
+
+The following specialized agents handle specific IBM Cloud domains:
+
+- **IBM Cloud Base Agent** - Core resource management and targeting
+- **IBM Cloud Guide Agent** - Documentation and best practices  
+- **IBM Cloud Serverless Agent** - Code Engine and serverless computing
+- **IBM Cloud Account Admin Agent** - User management and IAM
+- **IBM Cloud Cloud Automation Agent** - Deployable architectures and automation
+
+# 🚀 Getting Started
+
+## Quick Start with Coordination Agents
+
+### Option 1: Use the Supervisor Agent (Recommended)
+The Supervisor Agent automatically routes your requests to the right specialist:
+
+```bash
+# Connect to the default supervisor agent
+uvx a2a-cli --server http://localhost:8000 chat
+
+# Try these example requests:
+# "List all my resource groups"
+# "Deploy a serverless application" 
+# "Add a new user to my account"
+# "Help me understand IBM Cloud best practices"
+```
+
+### Option 2: Work with The Kingsmen Elite Team
+For a themed approach with codenames and personalities:
+
+```bash
+# Connect to the Kingsmen coordination
+uvx a2a-cli --server http://localhost:8000/kingsmen_agent chat
+
+# Try these example requests:
+# "Show me the Kingsmen roster"
+# "Have Lancelot add a user to my account"
+# "Send Percival to deploy a serverless app"
+# "Let Gareth help me understand cloud architecture"
+```
+
+## Direct Agent Access
+
+You can also connect directly to specialized agents using the `/connect` command in a2a-cli:
+
+### Base Agent (Foundation & Infrastructure)
 ```bash
 /connect http://localhost:8000/ibmcloud_base_agent
 ```
+**Capabilities**: Resource targeting, listing resource groups, account scoping, basic operations
 
-The **Base agent**'s 📇agent card  should appear:
-![Base agent Agent Card](docs/images/base_agent_card.png)
+### Guide Agent (Strategy & Best Practices) 
+```bash
+/connect http://localhost:8000/ibmcloud_guide_agent
+```
+**Capabilities**: IBM Cloud documentation, architecture guidance, best practices
+**Try asking**: "Assist me with understanding CRN components" or "Help me plan an enterprise account structure"
 
-The base agent has some basic resource management capabilities built-in, like:
-
-- Targetting an accounts, resource group, region, and cloud API endpoint.
-- Listing resource groups
-- Searching for resources using Lucene query syntax
-
-Now, while still running `a2a-cli`, switch to the **IBM Cloud Guide agent**:
-
+### Serverless Agent (Modern Applications)
 ```bash
 /connect http://localhost:8000/ibmcloud_serverless_agent
 ```
+**Capabilities**: Code Engine projects, applications, jobs, serverless deployment
+**Try asking**: "What can you help me with?" or "List my Code Engine projects"
 
-The **IBM Cloud Guide agent**'s 📇agent card will appear:
-![Guide agent's Agent Card](docs/images/guide_agent_card.png)
-
-The guide agent is connected via MCP to an assistant that has been trained on all official sources of IBM Cloud documentation.
-
-Try to ask a question, like:
-
-```text 
-Assist me with IBMCLOUD_TOPIC
-```
-Some example topics:
-
-- understanding the different parts of a CRN
-- setting up an account structure for an enterprise
-
-To switch to the **Serverless Computing agent** while running a2a-cli, type:
-
-```bash
-/connect http://local:8000/ibmcloud_serverless_agent
-```
-
-The **Serverless Computing agent**'s 📇agent card will be displayed:
-![Serverless Computing agent's Agent Card](docs/images/serverless_agent_card.png)
-
-Ask:
-
-```text
-What can you help me with?
-```
-
-You will see various serverless computing tasks that the agent can assist you with.  You'll want to start by listing the projects (code engine projects) that are currently avaialble in your account, and create one if none already exist.
-
-Next switch to the **Account Admin agent**:
-
+### Account Admin Agent (Security & Access)
 ```bash
 /connect http://localhost:8000/ibmcloud_account_admin_agent
 ```
+**Capabilities**: User management, IAM policies, access groups, service IDs, API keys
+**Try asking**: "List users in my account" or "Create a new access group"
 
-![Account Admin's Agent Card](docs/images/account_admin_agent_card.png)
-
-and ask 
-
-```text
-What can you help me with?
-```
-
-You will see various management tasks for working with IBM Cloud accounts, users and IAM access policies and groups for users and services.  Try listing the users in your account (your agent will need an API Key with Admin access for this, and most of the capabilities of this agent).
-
-![Account management capabilities](docs/images/account_admin_capabilities.png)
-
-To switch back to the Base agent, type 
-
+### Cloud Automation Agent (DevOps & Automation)
 ```bash
-/connect http://localhost:8000/ibmcloud_base_agent
+/connect http://localhost:8000/ibmcloud_cloud_automation_agent  
 ```
+**Capabilities**: Deployable architectures, projects, Schematics, Terraform
+**Try asking**: "List deployable architectures" or "Create a new project"
 
-## 🕵🏼‍♂️ Serverless Computing Agent Example
+# 🏗️ Architecture Deep Dive
 
-An example specialized agent for Serverless computing using Code Engine is found in `ibmcloud_serverless_agent/agent.py`, which has:
+## Agent Coordination Patterns
 
-- 🧠LLM connection - LiteLLM
-- 🛠️IBMCloud MCP Server tool configuration for Code Engine-related tasks
-- 🕵️Agent 📃instructions for Serverless computing on IBM Cloud.
+### Supervisor Agent 🤖
+- **Purpose**: Intelligent task delegation using LLM-powered routing
+- **Technology**: HTTP-based delegation with session management
+- **Benefits**: Automatic agent selection, seamless experience, efficient routing
+- **Use Case**: General users who want the system to choose the best agent automatically
+
+### The Kingsmen 🎩
+- **Purpose**: Themed team coordination with memorable codenames
+- **Technology**: Same HTTP delegation with enhanced personality-driven routing  
+- **Benefits**: Clear specializations, memorable interactions, themed experience
+- **Use Case**: Users who prefer working with named specialists and want a more engaging interface
+
+### Direct Agent Access 🎯
+- **Purpose**: Direct access to specialized capabilities
+- **Technology**: Direct MCP tool integration with IBM Cloud APIs
+- **Benefits**: Full control, specialized expertise, no routing overhead
+- **Use Case**: Expert users who know exactly which agent they need
+
+## Implementation Details
+
+Each specialized agent extends the `IBMCloudBaseAgent` class and includes:
+- 🧠 **LLM Integration**: OpenAI, Anthropic, LiteLLM, and other providers via chuk-llm
+- 🛠️ **MCP Tools**: Specialized IBM Cloud MCP Server tools for each domain
+- 🕵️ **Expert Instructions**: Domain-specific system prompts and behavior patterns
+- 📊 **Session Management**: Optional session support for coordination agents
+- 🔄 **Fallback Handling**: Graceful degradation when MCP tools are unavailable
 
 ## 📦Containerization
 
@@ -184,7 +249,7 @@ You can customize the build process by passing build arguments using the `--buil
 
 
 ```bash
-podman build --build-arg IBMCLOUD_PLUGINS="project" -t ibmcloud-base-agent:latest .
+podman build --build-arg IBMCLOUD_PLUGINS="project" -t ibmcloud-agents:latest .
 ```
 
 ### ⚡️Deploy to local Podman, Rancher or Docker desktop
@@ -208,7 +273,7 @@ LITELLM_PROXY_MODEL=
 ```
 
 ```bash
-podman run --rm -i -d --env-file=.env -p 8000:8000 ibmcloud-base-agent:latest
+podman run --rm -i -d --env-file=.env -p 8000:8000 ibmcloud-agents:latest
 ```
 
 ### Build and deploy to IBM Cloud container registry
@@ -230,8 +295,8 @@ docker build -f Dockerfile --push -t icr.io/agentic/a2a .
 2. Create a project, eg. “A2A-play”
 3. Navigate to “Applications”
 4. Create application
- Name: ibmcloud-agent
- Code repo URL: https://github.com/ccmitchellusa/ibmcloud-base-agent
+ Name: ibmcloud-agents
+ Code repo URL: https://github.com/ccmitchellusa/ibmcloud-agents
 
 5. Navigate to "Optional settings"
 	Image start options
@@ -242,6 +307,61 @@ docker build -f Dockerfile --push -t icr.io/agentic/a2a .
 8. Select a container registry namespace
 9. Select Done
 
+## ☁️ IBM Cloud Services Integration
+
+### Optional Supporting Services
+
+When deploying to IBM Cloud Code Engine, you can optionally set up supporting services for production monitoring and session management:
+
+- **📊 IBM Cloud Monitoring (Sysdig)** - OTEL metrics collection and application monitoring
+- **📝 IBM Cloud Logs** - Centralized logging and log analysis  
+- **🗂️ Object Storage** - Persistent session management and conversation history
+
+### Setting up Supporting Services
+
+1. **Create the services**:
+   ```bash
+   # Set up required environment variables
+   cp .env.ibmcloud.example .env.ibmcloud
+   # Edit .env.ibmcloud with your IBM Cloud settings
+   
+   # Create all supporting services
+   make ibmcloud-services-setup
+   ```
+
+2. **Get service credentials**:
+   ```bash
+   # Display environment variables for the created services
+   make ibmcloud-services-env
+   ```
+
+3. **Configure your deployment**:
+   ```bash
+   # Copy the output from step 2 to your .env.ibmcloud file
+   # Set the *_ENABLED flags to true for services you want to use
+   
+   # Example:
+   IBMCLOUD_MONITORING_ENABLED=true
+   IBMCLOUD_LOGS_ENABLED=true  
+   IBMCLOUD_COS_ENABLED=true
+   ```
+
+4. **Deploy with services**:
+   ```bash
+   # Deploy to IBM Cloud with monitoring and storage
+   make ibmcloud-all
+   ```
+
+### Service Configuration Details
+
+The agents automatically detect and configure these services based on environment variables:
+
+- **Monitoring**: OTEL metrics are automatically exported to IBM Cloud Monitoring when enabled
+- **Logging**: Application logs are sent to IBM Cloud Logs for centralized analysis
+- **Storage**: Session data and conversation history are stored in Object Storage for persistence
+
+For manual configuration, see the service configuration in [`agent.yaml`](agent.yaml) and [`src/common/services.py`](src/common/services.py).
+
 ### Connecting to remote agents running on IBM Cloud Code Engine
 
 Connect [a2a-cli](https://github.com/chrishayuk/a2a-cli) to an agent running on Code Engine:
@@ -250,7 +370,7 @@ Connect [a2a-cli](https://github.com/chrishayuk/a2a-cli) to an agent running on 
 2. Replace the url in the following snippet with the actual app's url from Step 1:
 
 ```bash
-uvx a2a-cli --server https://ibmcloud-base-agent.1uo9xqkaspg3.us-east.codeengine.appdomain.cloud chat
+uvx a2a-cli --server https://ibmcloud-agents.1uo9xqkaspg3.us-east.codeengine.appdomain.cloud chat
 # add --log-level DEBUG for detailed output
 ```
 
@@ -267,8 +387,8 @@ Contributions are welcome! Please follow these steps:
 This project is licensed under the [MIT License](LICENSE).
 
 - Makefile based on the work of Mihai Criveti, from [MCP Context Forge](https://github.com/IBM/mcp-context-forge/blob/main/LICENSE) under Apache v2 License.
-- Agent is based on [a2a-server](https://github.com/chrishayuk/a2a-server) under MIT License.
-- [IBM Cloud MCP Server](https://github.com/IBM-Cloud/ibmcloud-mcp-server) is built into the containerized version of this agent.
+- Agents are based on [a2a-server](https://github.com/chrishayuk/a2a-server) under MIT License.
+- [IBM Cloud MCP Server](https://github.com/IBM-Cloud/ibmcloud-mcp-server) is built into the containerized version of these agents.
 
 ## 👏Acknowledgments
 

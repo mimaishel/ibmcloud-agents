@@ -1,0 +1,179 @@
+{
+  "project": {
+    "name": "IBM Cloud Agents",
+    "description": "Lightweight Platform Engineering AI agents for IBM Cloud with built-in MCP tools",
+    "version": "1.0.0",
+    "type": "ai-agent-platform",
+    "repository": "https://github.com/ccmitchellusa/ibmcloud-base-agent",
+    "license": "MIT",
+    "author": {
+      "name": "Chris Mitchell",
+      "organization": "ccmitchellusa",
+      "contact": "https://www.linkedin.com/in/chris-mitchell-ibm/"
+    }
+  },
+  "architecture": {
+    "pattern": "multi-agent-system",
+    "protocol": "A2A (Agent-to-Agent)",
+    "base_framework": "a2a-server",
+    "mcp_integration": "chuk-mcp",
+    "deployment_targets": [
+      "local-development", 
+      "containers", 
+      "kubernetes", 
+      "ibm-cloud-code-engine"
+    ]
+  },
+  "agents": {
+    "base_agent": {
+      "path": "src/ibmcloud_base_agent/agent.py",
+      "purpose": "Core template and basic IBM Cloud resource management",
+      "capabilities": ["resource-targeting", "resource-group-management", "account-scoping"],
+      "mcp_tools": ["resource-management"],
+      "endpoint": "/ibmcloud_base_agent"
+    },
+    "serverless_agent": {
+      "path": "src/ibmcloud_serverless_agent/agent.py", 
+      "purpose": "IBM Cloud Code Engine serverless computing",
+      "capabilities": ["code-engine-management", "serverless-deployment", "application-monitoring"],
+      "mcp_tools": ["serverless-computing"],
+      "endpoint": "/ibmcloud_serverless_agent"
+    },
+    "guide_agent": {
+      "path": "src/ibmcloud_guide_agent/agent.py",
+      "purpose": "IBM Cloud documentation and guidance assistant", 
+      "capabilities": ["documentation-search", "best-practices", "architecture-guidance"],
+      "mcp_tools": ["ibm-cloud-guide"],
+      "endpoint": "/ibmcloud_guide_agent"
+    },
+    "account_admin_agent": {
+      "path": "src/ibmcloud_account_admin_agent/agent.py",
+      "purpose": "Account administration and IAM management",
+      "capabilities": ["user-management", "access-policies", "service-ids", "api-key-management"],
+      "mcp_tools": ["account-admin"],
+      "endpoint": "/ibmcloud_account_admin_agent"
+    },
+    "cloud_automation_agent": {
+      "path": "src/ibmcloud_cloud_automation_agent/agent.py",
+      "purpose": "Cloud automation and deployment architectures",
+      "capabilities": ["deployable-architectures", "projects", "schematics", "terraform"],
+      "mcp_tools": ["cloud-automation"],
+      "endpoint": "/ibmcloud_cloud_automation_agent"
+    },
+    "supervisor_agent": {
+      "path": "src/supervisor_agent/supervisor_handler.py",
+      "purpose": "Intelligent task delegation to specialized agents",
+      "capabilities": ["llm-routing", "multi-agent-coordination", "task-delegation"],
+      "endpoint": "/supervisor_agent",
+      "default": true
+    },
+    "kingsmen_agent": {
+      "path": "src/kingsmen_agent/kingsmen_handler.py", 
+      "purpose": "Elite team coordination with specialized codenames",
+      "capabilities": ["team-coordination", "expertise-routing", "specialized-delegation"],
+      "endpoint": "/kingsmen_agent"
+    }
+  },
+  "core_files": {
+    "configuration": {
+      "agent.yaml": "Main agent server configuration with all agent definitions",
+      "*.env": "Environment variables for API keys and service configuration",
+      "run.sh": "Local development startup script"
+    },
+    "base_classes": {
+      "src/ibmcloud_base_agent/agent.py": "IBMCloudBaseAgent class template for creating new agents",
+      "src/common/services.py": "IBM Cloud services integration (monitoring, logging, storage)"
+    },
+    "mcp_configs": {
+      "ibmcloud_mcp_*_config.json": "MCP server configurations for each specialized agent"
+    }
+  },
+  "development": {
+    "language": "python",
+    "python_version": "3.12+",
+    "package_manager": "uv",
+    "container_runtime": ["podman", "docker"],
+    "testing_framework": "pytest",
+    "setup_commands": [
+      "uv sync --reinstall",
+      "export OPENAI_API_KEY=your_key",
+      "export IBMCLOUD_API_KEY=your_key", 
+      "./run.sh"
+    ],
+    "test_command": "python tests/run_tests.py"
+  },
+  "deployment": {
+    "local": {
+      "command": "./run.sh",
+      "port": 8000,
+      "endpoints": ["http://localhost:8000/agent-card.json"]
+    },
+    "container": {
+      "dockerfile": "Containerfile",
+      "build_args": ["PYTHON_VERSION", "IBMCLOUD_VERSION", "IBMCLOUD_ARCH", "IBMCLOUD_PLUGINS"],
+      "required_env": ["IBMCLOUD_API_KEY", "OPENAI_API_KEY"],
+      "port": 8000
+    },
+    "ibm_cloud_code_engine": {
+      "build_from_source": true,
+      "required_services": ["container_registry"],
+      "optional_services": ["monitoring", "logging", "object_storage"]
+    }
+  },
+  "api": {
+    "protocol": "A2A",
+    "base_url": "http://localhost:8000",
+    "endpoints": {
+      "/agent-card.json": "Server agent card information",
+      "/ibmcloud_base_agent": "Base agent chat interface",
+      "/ibmcloud_serverless_agent": "Serverless agent chat interface", 
+      "/ibmcloud_guide_agent": "Guide agent chat interface",
+      "/ibmcloud_account_admin_agent": "Account admin agent chat interface",
+      "/ibmcloud_cloud_automation_agent": "Cloud automation agent chat interface",
+      "/supervisor_agent": "Supervisor agent chat interface (default)",
+      "/kingsmen_agent": "Kingsmen team agent chat interface"
+    },
+    "client_tools": [
+      "a2a-cli: uvx a2a-cli --server http://localhost:8000 chat"
+    ]
+  },
+  "dependencies": {
+    "required": {
+      "a2a-server": "Agent-to-Agent protocol server framework",
+      "chuk-mcp": "Multi-server MCP implementation", 
+      "chuk-llm": "Multi-provider LLM client library",
+      "ibmcloud-mcp-server": "IBM Cloud MCP tools (coming soon)"
+    },
+    "optional": {
+      "ibm-cloud-monitoring": "OTEL metrics collection",
+      "ibm-cloud-logs": "Centralized logging",
+      "ibm-cloud-object-storage": "Session management storage"
+    }
+  },
+  "ai_integration": {
+    "model_requirements": {
+      "tool_calling": "Required - must support OpenAI-compatible tool calling",
+      "supported_providers": ["openai", "anthropic", "litellm", "watsonx"],
+      "default_model": "gpt-4o-mini"
+    },
+    "mcp_protocol": {
+      "version": "1.0",
+      "transport": "stdio",
+      "tools_namespace": "ibmcloud"
+    },
+    "customization_points": {
+      "instructions": "System prompts in each agent's create function",
+      "tools": "MCP tool configurations in *_config.json files", 
+      "models": "Provider and model settings in agent.yaml",
+      "new_agents": "Extend IBMCloudBaseAgent class in new modules"
+    }
+  },
+  "use_cases": [
+    "IBM Cloud platform engineering automation",
+    "Multi-agent task delegation and coordination", 
+    "Serverless application deployment and management",
+    "Cloud infrastructure provisioning and configuration",
+    "Account administration and access management",
+    "Documentation and best practice guidance"
+  ]
+}

@@ -1050,13 +1050,21 @@ compose-clean:
 
 
 # =============================================================================
-# ☁️ IBM CLOUD CODE ENGINE
+# ☁️ IBM CLOUD CODE ENGINE & SUPPORTING SERVICES
 # =============================================================================
-# help: ☁️ IBM CLOUD CODE ENGINE
+# help: ☁️ IBM CLOUD CODE ENGINE & SUPPORTING SERVICES
 # help: ibmcloud-check-env          - Verify all required IBM Cloud env vars are set
 # help: ibmcloud-cli-install        - Auto-install IBM Cloud CLI + required plugins (OS auto-detected)
 # help: ibmcloud-login              - Login to IBM Cloud CLI using IBMCLOUD_API_KEY (--sso)
 # help: ibmcloud-appid-create       - Create an App ID instance in the target resource group
+# help: ibmcloud-monitoring-create  - Create IBM Cloud Monitoring (Sysdig) instance for OTEL metrics
+# help: ibmcloud-logs-create        - Create IBM Cloud Logs instance for centralized logging
+# help: ibmcloud-cos-create         - Create Object Storage bucket for session management
+# help: ibmcloud-en-create          - Create Event Notifications instance for agent alerting
+# help: ibmcloud-en-topic-create    - Create Event Notifications topic for agent events
+# help: ibmcloud-en-destination-create - Create Event Notifications destination (email/SMS/webhook)
+# help: ibmcloud-services-setup     - Create all supporting services (monitoring, logs, storage, events)
+# help: ibmcloud-services-env       - Display environment variables for created services
 # help: ibmcloud-ce-login           - Set Code Engine target project and region
 # help: ibmcloud-list-containers    - List deployed Code Engine apps
 # help: ibmcloud-tag                - Tag container image for IBM Container Registry
@@ -1067,8 +1075,11 @@ compose-clean:
 # help: ibmcloud-ce-rm              - Delete the Code Engine application
 
 .PHONY: ibmcloud-check-env ibmcloud-cli-install ibmcloud-login ibmcloud-ce-login \
-        ibmcloud-list-containers ibmcloud-tag ibmcloud-push ibmcloud-deploy \
-        ibmcloud-ce-logs ibmcloud-ce-status ibmcloud-ce-rm
+        ibmcloud-monitoring-create ibmcloud-logs-create ibmcloud-cos-create \
+        ibmcloud-en-create ibmcloud-en-topic-create ibmcloud-en-destination-create \
+        ibmcloud-services-setup ibmcloud-services-env ibmcloud-list-containers \
+        ibmcloud-tag ibmcloud-push ibmcloud-deploy ibmcloud-ce-logs \
+        ibmcloud-ce-status ibmcloud-ce-rm
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 📦  Load environment file with IBM Cloud Code Engine configuration
@@ -1084,6 +1095,18 @@ IBMCLOUD_CPU            ?= 1      # vCPU allocation for Code Engine app
 IBMCLOUD_MEMORY         ?= 4G     # Memory allocation for Code Engine app
 IBMCLOUD_REGISTRY_SECRET ?= $(IBMCLOUD_PROJECT)-registry-secret
 
+## Service defaults with fallback to project name
+IBMCLOUD_MONITORING_INSTANCE ?= $(IBMCLOUD_PROJECT)-monitoring
+IBMCLOUD_LOGS_INSTANCE       ?= $(IBMCLOUD_PROJECT)-logs
+IBMCLOUD_COS_INSTANCE        ?= $(IBMCLOUD_PROJECT)-cos
+IBMCLOUD_COS_BUCKET          ?= $(IBMCLOUD_PROJECT)-sessions
+IBMCLOUD_EN_INSTANCE         ?= $(IBMCLOUD_PROJECT)-events
+IBMCLOUD_EN_TOPIC            ?= $(IBMCLOUD_PROJECT)-agent-events
+IBMCLOUD_MONITORING_PLAN     ?= graduated-tier
+IBMCLOUD_LOGS_PLAN           ?= standard
+IBMCLOUD_COS_PLAN            ?= standard
+IBMCLOUD_EN_PLAN             ?= standard
+
 ## Required ENV variables:
 # IBMCLOUD_REGION              = IBM Cloud region (e.g. us-south)
 # IBMCLOUD_PROJECT             = Code Engine project name
@@ -1092,6 +1115,18 @@ IBMCLOUD_REGISTRY_SECRET ?= $(IBMCLOUD_PROJECT)-registry-secret
 # IBMCLOUD_IMAGE_NAME          = Full image path (e.g. us.icr.io/namespace/app:tag)
 # IBMCLOUD_IMG_PROD            = Local container image name
 # IBMCLOUD_API_KEY             = IBM Cloud IAM API key (optional, use --sso if not set)
+
+## Optional service ENV variables for monitoring and storage:
+# IBMCLOUD_MONITORING_INSTANCE = IBM Cloud Monitoring instance name (default: $(IBMCLOUD_PROJECT)-monitoring)
+# IBMCLOUD_LOGS_INSTANCE       = IBM Cloud Logs instance name (default: $(IBMCLOUD_PROJECT)-logs)
+# IBMCLOUD_COS_INSTANCE        = Object Storage instance name (default: $(IBMCLOUD_PROJECT)-cos)
+# IBMCLOUD_COS_BUCKET          = Object Storage bucket name (default: $(IBMCLOUD_PROJECT)-sessions)
+# IBMCLOUD_EN_INSTANCE         = Event Notifications instance name (default: $(IBMCLOUD_PROJECT)-events)
+# IBMCLOUD_EN_TOPIC            = Event Notifications topic name (default: $(IBMCLOUD_PROJECT)-agent-events)
+# IBMCLOUD_MONITORING_PLAN     = Monitoring service plan (default: graduated-tier)
+# IBMCLOUD_LOGS_PLAN           = Logs service plan (default: standard)
+# IBMCLOUD_COS_PLAN            = Object Storage service plan (default: standard)
+# IBMCLOUD_EN_PLAN             = Event Notifications service plan (default: standard)
 
 ibmcloud-check-env:
 	@bash -eu -o pipefail -c '\
@@ -1166,6 +1201,235 @@ ibmcloud-login:
 
 ibmcloud-appid-create:
 	@ibmcloud resource service-instance-create -g "$(IBMCLOUD_RESOURCE_GROUP)" "$(IBMCLOUD_PROJECT)" appid graduated-tier us-south
+
+ibmcloud-monitoring-create:
+	@echo "📊 Creating IBM Cloud Monitoring (Sysdig) instance for OTEL metrics…"
+	@if ! ibmcloud resource service-instance $(IBMCLOUD_MONITORING_INSTANCE) >/dev/null 2>&1; then \
+		ibmcloud resource service-instance-create $(IBMCLOUD_MONITORING_INSTANCE) \
+			sysdig-monitor $(IBMCLOUD_MONITORING_PLAN) $(IBMCLOUD_REGION) \
+			-g $(IBMCLOUD_RESOURCE_GROUP); \
+		echo "⏳  Waiting for Monitoring instance to be ready…"; \
+		sleep 30; \
+	else \
+		echo "✅  IBM Cloud Monitoring instance already exists"; \
+	fi
+	@echo "🔑  Creating monitoring service credentials…"
+	@if ! ibmcloud resource service-key $(IBMCLOUD_MONITORING_INSTANCE)-key >/dev/null 2>&1; then \
+		ibmcloud resource service-key-create $(IBMCLOUD_MONITORING_INSTANCE)-key Manager \
+			--instance-name $(IBMCLOUD_MONITORING_INSTANCE); \
+	else \
+		echo "✅  Monitoring service key already exists"; \
+	fi
+	@echo "✅  IBM Cloud Monitoring setup complete!"
+
+ibmcloud-logs-create:
+	@echo "📝 Creating IBM Cloud Logs instance for centralized logging…"
+	@if ! ibmcloud resource service-instance $(IBMCLOUD_LOGS_INSTANCE) >/dev/null 2>&1; then \
+		ibmcloud resource service-instance-create $(IBMCLOUD_LOGS_INSTANCE) \
+			logdna $(IBMCLOUD_LOGS_PLAN) $(IBMCLOUD_REGION) \
+			-g $(IBMCLOUD_RESOURCE_GROUP); \
+		echo "⏳  Waiting for Logs instance to be ready…"; \
+		sleep 30; \
+	else \
+		echo "✅  IBM Cloud Logs instance already exists"; \
+	fi
+	@echo "🔑  Creating logs service credentials…"
+	@if ! ibmcloud resource service-key $(IBMCLOUD_LOGS_INSTANCE)-key >/dev/null 2>&1; then \
+		ibmcloud resource service-key-create $(IBMCLOUD_LOGS_INSTANCE)-key Manager \
+			--instance-name $(IBMCLOUD_LOGS_INSTANCE); \
+	else \
+		echo "✅  Logs service key already exists"; \
+	fi
+	@echo "✅  IBM Cloud Logs setup complete!"
+
+ibmcloud-cos-create:
+	@echo "🗂️  Creating Object Storage instance and bucket for session management…"
+	@if ! ibmcloud resource service-instance $(IBMCLOUD_COS_INSTANCE) >/dev/null 2>&1; then \
+		ibmcloud resource service-instance-create $(IBMCLOUD_COS_INSTANCE) \
+			cloud-object-storage $(IBMCLOUD_COS_PLAN) global \
+			-g $(IBMCLOUD_RESOURCE_GROUP); \
+		echo "⏳  Waiting for COS instance to be ready…"; \
+		sleep 30; \
+	else \
+		echo "✅  Object Storage instance already exists"; \
+	fi
+	@echo "🔑  Creating COS service credentials with HMAC keys…"
+	@if ! ibmcloud resource service-key $(IBMCLOUD_COS_INSTANCE)-key >/dev/null 2>&1; then \
+		ibmcloud resource service-key-create $(IBMCLOUD_COS_INSTANCE)-key Writer \
+			--instance-name $(IBMCLOUD_COS_INSTANCE) \
+			--parameters '{"HMAC": true}'; \
+	else \
+		echo "✅  COS service key already exists"; \
+	fi
+	@echo "🪣  Creating storage bucket: $(IBMCLOUD_COS_BUCKET)…"
+	@SERVICE_INSTANCE_ID=$$(ibmcloud resource service-instance $(IBMCLOUD_COS_INSTANCE) --output json | jq -r '.guid'); \
+	CREDENTIALS=$$(ibmcloud resource service-key $(IBMCLOUD_COS_INSTANCE)-key --output json); \
+	ACCESS_KEY=$$(echo "$$CREDENTIALS" | jq -r '.credentials.cos_hmac_keys.access_key_id'); \
+	SECRET_KEY=$$(echo "$$CREDENTIALS" | jq -r '.credentials.cos_hmac_keys.secret_access_key'); \
+	ENDPOINT="https://s3.$(IBMCLOUD_REGION).cloud-object-storage.appdomain.cloud"; \
+	if ! aws --endpoint-url=$$ENDPOINT --profile ibmcos s3 ls s3://$(IBMCLOUD_COS_BUCKET) >/dev/null 2>&1; then \
+		echo "🪣  Creating bucket $(IBMCLOUD_COS_BUCKET)…"; \
+		AWS_ACCESS_KEY_ID=$$ACCESS_KEY AWS_SECRET_ACCESS_KEY=$$SECRET_KEY \
+		aws --endpoint-url=$$ENDPOINT s3 mb s3://$(IBMCLOUD_COS_BUCKET) --region $(IBMCLOUD_REGION); \
+	else \
+		echo "✅  Bucket $(IBMCLOUD_COS_BUCKET) already exists"; \
+	fi
+	@echo "✅  Object Storage setup complete!"
+
+ibmcloud-en-create:
+	@echo "🔔 Creating Event Notifications instance for agent alerting…"
+	@if ! ibmcloud resource service-instance $(IBMCLOUD_EN_INSTANCE) >/dev/null 2>&1; then \
+		ibmcloud resource service-instance-create $(IBMCLOUD_EN_INSTANCE) \
+			event-notifications $(IBMCLOUD_EN_PLAN) $(IBMCLOUD_REGION) \
+			-g $(IBMCLOUD_RESOURCE_GROUP); \
+		echo "✅  Created Event Notifications instance: $(IBMCLOUD_EN_INSTANCE)"; \
+	else \
+		echo "✅  Event Notifications instance already exists"; \
+	fi
+
+	@echo "🔑 Creating service key for Event Notifications…"
+	@if ! ibmcloud resource service-key $(IBMCLOUD_EN_INSTANCE)-key >/dev/null 2>&1; then \
+		ibmcloud resource service-key-create $(IBMCLOUD_EN_INSTANCE)-key Manager \
+			--instance-name $(IBMCLOUD_EN_INSTANCE); \
+		echo "✅  Created service key: $(IBMCLOUD_EN_INSTANCE)-key"; \
+	else \
+		echo "✅  Service key already exists"; \
+	fi
+	@echo "✅  Event Notifications instance setup complete!"
+
+ibmcloud-en-topic-create:
+	@echo "📢 Creating Event Notifications topic for agent events…"
+	@EN_INSTANCE_ID=$$(ibmcloud resource service-instance $(IBMCLOUD_EN_INSTANCE) --output json | jq -r '.guid'); \
+	EN_CREDS=$$(ibmcloud resource service-key $(IBMCLOUD_EN_INSTANCE)-key --output json); \
+	EN_API_KEY=$$(echo $$EN_CREDS | jq -r '.credentials.apikey'); \
+	EN_URL=$$(echo $$EN_CREDS | jq -r '.credentials.url'); \
+	TOPIC_EXISTS=$$(curl -s -H "Authorization: Bearer $$(ibmcloud iam oauth-tokens --output json | jq -r '.iam_token' | cut -d' ' -f2)" \
+		"$$EN_URL/v1/instances/$$EN_INSTANCE_ID/topics" | jq -r --arg name "$(IBMCLOUD_EN_TOPIC)" '.topics[]? | select(.name == $$name) | .id'); \
+	if [ -z "$$TOPIC_EXISTS" ] || [ "$$TOPIC_EXISTS" = "null" ]; then \
+		echo "📢 Creating topic: $(IBMCLOUD_EN_TOPIC)"; \
+		curl -X POST \
+			-H "Authorization: Bearer $$(ibmcloud iam oauth-tokens --output json | jq -r '.iam_token' | cut -d' ' -f2)" \
+			-H "Content-Type: application/json" \
+			-d '{"name": "$(IBMCLOUD_EN_TOPIC)", "description": "Agent events and alerts from IBM Cloud agents"}' \
+			"$$EN_URL/v1/instances/$$EN_INSTANCE_ID/topics" > /dev/null; \
+		echo "✅  Created topic: $(IBMCLOUD_EN_TOPIC)"; \
+	else \
+		echo "✅  Topic $(IBMCLOUD_EN_TOPIC) already exists"; \
+	fi
+
+ibmcloud-en-destination-create:
+	@echo "📧 Creating Event Notifications email destination…"
+	@echo "💡 This target creates a template destination. Update the email address as needed."
+	@EN_INSTANCE_ID=$$(ibmcloud resource service-instance $(IBMCLOUD_EN_INSTANCE) --output json | jq -r '.guid'); \
+	EN_CREDS=$$(ibmcloud resource service-key $(IBMCLOUD_EN_INSTANCE)-key --output json); \
+	EN_API_KEY=$$(echo $$EN_CREDS | jq -r '.credentials.apikey'); \
+	EN_URL=$$(echo $$EN_CREDS | jq -r '.credentials.url'); \
+	DEST_NAME="$(IBMCLOUD_PROJECT)-email-alerts"; \
+	DEST_EXISTS=$$(curl -s -H "Authorization: Bearer $$(ibmcloud iam oauth-tokens --output json | jq -r '.iam_token' | cut -d' ' -f2)" \
+		"$$EN_URL/v1/instances/$$EN_INSTANCE_ID/destinations" | jq -r --arg name "$$DEST_NAME" '.destinations[]? | select(.name == $$name) | .id'); \
+	if [ -z "$$DEST_EXISTS" ] || [ "$$DEST_EXISTS" = "null" ]; then \
+		echo "📧 Creating email destination: $$DEST_NAME"; \
+		EMAIL_ADDRESS=$${IBMCLOUD_ALERT_EMAIL:-"admin@example.com"}; \
+		curl -X POST \
+			-H "Authorization: Bearer $$(ibmcloud iam oauth-tokens --output json | jq -r '.iam_token' | cut -d' ' -f2)" \
+			-H "Content-Type: application/json" \
+			-d "{\"name\": \"$$DEST_NAME\", \"type\": \"smtp_ibm\", \"description\": \"Email alerts for IBM Cloud agents\", \"config\": {\"to\": [\"$$EMAIL_ADDRESS\"], \"reply_to\": \"noreply@ibm.com\", \"subject\": \"IBM Cloud Agent Alert\"}}" \
+			"$$EN_URL/v1/instances/$$EN_INSTANCE_ID/destinations" > /dev/null; \
+		echo "✅  Created email destination for: $$EMAIL_ADDRESS"; \
+		echo "💡  To change the email, set IBMCLOUD_ALERT_EMAIL environment variable"; \
+	else \
+		echo "✅  Email destination $$DEST_NAME already exists"; \
+	fi
+
+	@echo "🌐 For webhook destinations, use:"
+	@echo "   curl -X POST \\"
+	@echo "     -H \"Authorization: Bearer \$$(ibmcloud iam oauth-tokens --output json | jq -r '.iam_token' | cut -d' ' -f2)\" \\"
+	@echo "     -H \"Content-Type: application/json\" \\"
+	@echo "     -d '{\"name\": \"webhook-alerts\", \"type\": \"webhook\", \"config\": {\"url\": \"https://your-webhook.com/alerts\", \"verb\": \"POST\"}}' \\"
+	@echo "     \"$$EN_URL/v1/instances/$$EN_INSTANCE_ID/destinations\""
+
+ibmcloud-services-setup: ibmcloud-monitoring-create ibmcloud-logs-create ibmcloud-cos-create ibmcloud-en-create
+	@echo "🎉 All supporting services created successfully!"
+	@echo "📊 Monitoring: $(IBMCLOUD_MONITORING_INSTANCE)"
+	@echo "📝 Logs: $(IBMCLOUD_LOGS_INSTANCE)"
+	@echo "🗂️  Storage: $(IBMCLOUD_COS_INSTANCE)/$(IBMCLOUD_COS_BUCKET)"
+	@echo "🔔 Events: $(IBMCLOUD_EN_INSTANCE)"
+	@echo ""
+	@echo "💡 Service credentials have been created. To use them:"
+	@echo "   ibmcloud resource service-key $(IBMCLOUD_MONITORING_INSTANCE)-key"
+	@echo "   ibmcloud resource service-key $(IBMCLOUD_LOGS_INSTANCE)-key"
+	@echo "   ibmcloud resource service-key $(IBMCLOUD_COS_INSTANCE)-key"
+	@echo "   ibmcloud resource service-key $(IBMCLOUD_EN_INSTANCE)-key"
+	@echo ""
+	@echo "🔧 Next steps:"
+	@echo "   1. Run: make ibmcloud-services-env"
+	@echo "   2. Copy the output to your .env.ibmcloud file"
+	@echo "   3. Enable services by setting *_ENABLED=true"
+
+ibmcloud-services-env:
+	@echo "# ==================================================================="
+	@echo "# IBM Cloud Services Environment Variables"
+	@echo "# Copy these to your .env.ibmcloud file and enable as needed"
+	@echo "# ==================================================================="
+	@echo ""
+	@echo "# IBM Cloud Monitoring Configuration"
+	@if ibmcloud resource service-key $(IBMCLOUD_MONITORING_INSTANCE)-key >/dev/null 2>&1; then \
+		MONITORING_CREDS=$$(ibmcloud resource service-key $(IBMCLOUD_MONITORING_INSTANCE)-key --output json); \
+		ACCESS_KEY=$$(echo "$$MONITORING_CREDS" | jq -r '.credentials.Sysdig_Access_Key // .credentials.access_key'); \
+		ENDPOINT=$$(echo "$$MONITORING_CREDS" | jq -r '.credentials.Sysdig_Collector_Endpoint // .credentials.collector_endpoint'); \
+		echo "IBMCLOUD_MONITORING_ENABLED=false  # Set to true to enable"; \
+		echo "IBMCLOUD_MONITORING_INSTANCE=$(IBMCLOUD_MONITORING_INSTANCE)"; \
+		echo "IBMCLOUD_MONITORING_ACCESS_KEY=$$ACCESS_KEY"; \
+		echo "IBMCLOUD_MONITORING_OTEL_ENDPOINT=$$ENDPOINT"; \
+	else \
+		echo "# Monitoring service not found - run: make ibmcloud-monitoring-create"; \
+	fi
+	@echo ""
+	@echo "# IBM Cloud Logs Configuration"
+	@if ibmcloud resource service-key $(IBMCLOUD_LOGS_INSTANCE)-key >/dev/null 2>&1; then \
+		LOGS_CREDS=$$(ibmcloud resource service-key $(IBMCLOUD_LOGS_INSTANCE)-key --output json); \
+		INGESTION_KEY=$$(echo "$$LOGS_CREDS" | jq -r '.credentials.ingestion_key // .credentials.service_key'); \
+		ENDPOINT=$$(echo "$$LOGS_CREDS" | jq -r '.credentials.ingestion_hostname // .credentials.hostname'); \
+		echo "IBMCLOUD_LOGS_ENABLED=false  # Set to true to enable"; \
+		echo "IBMCLOUD_LOGS_INSTANCE=$(IBMCLOUD_LOGS_INSTANCE)"; \
+		echo "IBMCLOUD_LOGS_INGESTION_KEY=$$INGESTION_KEY"; \
+		echo "IBMCLOUD_LOGS_ENDPOINT=https://$$ENDPOINT/logs/ingest"; \
+	else \
+		echo "# Logs service not found - run: make ibmcloud-logs-create"; \
+	fi
+	@echo ""
+	@echo "# IBM Cloud Object Storage Configuration"
+	@if ibmcloud resource service-key $(IBMCLOUD_COS_INSTANCE)-key >/dev/null 2>&1; then \
+		COS_CREDS=$$(ibmcloud resource service-key $(IBMCLOUD_COS_INSTANCE)-key --output json); \
+		ACCESS_KEY=$$(echo "$$COS_CREDS" | jq -r '.credentials.cos_hmac_keys.access_key_id'); \
+		SECRET_KEY=$$(echo "$$COS_CREDS" | jq -r '.credentials.cos_hmac_keys.secret_access_key'); \
+		echo "IBMCLOUD_COS_ENABLED=false  # Set to true to enable"; \
+		echo "IBMCLOUD_COS_INSTANCE=$(IBMCLOUD_COS_INSTANCE)"; \
+		echo "IBMCLOUD_COS_BUCKET=$(IBMCLOUD_COS_BUCKET)"; \
+		echo "IBMCLOUD_COS_ENDPOINT=https://s3.$(IBMCLOUD_REGION).cloud-object-storage.appdomain.cloud"; \
+		echo "IBMCLOUD_COS_ACCESS_KEY_ID=$$ACCESS_KEY"; \
+		echo "IBMCLOUD_COS_SECRET_ACCESS_KEY=$$SECRET_KEY"; \
+	else \
+		echo "# Object Storage service not found - run: make ibmcloud-cos-create"; \
+	fi
+	@echo ""
+	@echo "# IBM Cloud Event Notifications Configuration"
+	@if ibmcloud resource service-key $(IBMCLOUD_EN_INSTANCE)-key >/dev/null 2>&1; then \
+		EN_CREDS=$$(ibmcloud resource service-key $(IBMCLOUD_EN_INSTANCE)-key --output json); \
+		API_KEY=$$(echo "$$EN_CREDS" | jq -r '.credentials.apikey'); \
+		URL=$$(echo "$$EN_CREDS" | jq -r '.credentials.url'); \
+		INSTANCE_ID=$$(ibmcloud resource service-instance $(IBMCLOUD_EN_INSTANCE) --output json | jq -r '.guid'); \
+		echo "IBMCLOUD_EN_ENABLED=false  # Set to true to enable"; \
+		echo "IBMCLOUD_EN_INSTANCE=$(IBMCLOUD_EN_INSTANCE)"; \
+		echo "IBMCLOUD_EN_INSTANCE_ID=$$INSTANCE_ID"; \
+		echo "IBMCLOUD_EN_API_KEY=$$API_KEY"; \
+		echo "IBMCLOUD_EN_URL=$$URL"; \
+		echo "IBMCLOUD_EN_TOPIC=$(IBMCLOUD_EN_TOPIC)"; \
+	else \
+		echo "# Event Notifications service not found - run: make ibmcloud-en-create"; \
+	fi
+	@echo ""
+	@echo "# ==================================================================="
 
 ibmcloud-ce-login:
 	@echo "🎯 Targeting Code Engine 🗂️ project '$(IBMCLOUD_PROJECT)' in 📍region '$(IBMCLOUD_REGION)'…"
