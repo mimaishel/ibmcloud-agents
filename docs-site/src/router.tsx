@@ -164,7 +164,7 @@ const tocContentModules = import.meta.glob<TocEntry[]>('/docs/**/*.(mdx|md)', {
 });
 
 const recursiveToc = (tocNode: TocEntry, flatTocEntries: TocLine[]) => {
-  if (tocNode.depth >= 3) return;
+  if (tocNode?.depth >= 3) return;
   Object.entries(tocNode?.children ?? []).forEach(([_, tocEntry]) => {
     flatTocEntries.push({
       title: tocEntry.value,
